@@ -82,13 +82,41 @@ set(ASM_SOURCES "asm/make_${CPU_ARCH}_${ASM_EXT}"
 
 add_library(fcontext STATIC ${SOURCES} ${ASM_SOURCES})
 target_include_directories(fcontext
-    PRIVATE include/fcontext
-    INTERFACE include)
+    PRIVATE
+        include/fcontext
+    INTERFACE
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:include>
+)
 
 set_target_properties(fcontext PROPERTIES FOLDER Deps ${IOS_GENERAL_PROPERTIES})
 
-install(TARGETS fcontext DESTINATION lib)
+install(
+    TARGETS fcontext
+    EXPORT DeboostContextTargets
+    DESTINATION lib
+)
 install(FILES ${HEADER} DESTINATION include/fcontext)
+
+install(
+    EXPORT DeboostContextTargets
+    NAMESPACE DeboostContext::
+    FILE DeboostContextTargets.cmake
+    DESTINATION lib/cmake/DeboostContext
+)
+
+file(
+    WRITE
+    "${CMAKE_CURRENT_BINARY_DIR}/DeboostContextConfig.cmake"
+    "include(\"\${CMAKE_CURRENT_LIST_DIR}/DeboostContextTargets.cmake\")"
+)
+
+install(
+    FILES "${CMAKE_CURRENT_BINARY_DIR}/DeboostContextConfig.cmake"
+    DESTINATION lib/cmake/DeboostContext
+)
+
+add_library(DeboostContext::fcontext ALIAS fcontext)
 
 if (BUILD_TEST)
     add_executable(test_fcontext test/test_fcontext.c)
